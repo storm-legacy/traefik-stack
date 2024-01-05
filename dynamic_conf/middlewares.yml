@@ -1,0 +1,34 @@
+http:
+  middlewares:
+    cors-middleware:
+      headers:
+        accessControlAllowOriginList:
+          - "http://localhost"
+          - "http://localhost:8080"
+          - "capacitor://localhost"
+        accessControlAllowHeaders:
+          - "*"
+        accessControlAllowMethods:
+          - "*"
+        accessControlMaxAge: 3600
+        addVaryHeader: true
+        referrerPolicy: no-referrer-when-downgrade
+
+    redirect-middleware:
+      redirectRegex:
+        regex: "^https://localhost/(.*)"
+        replacement: "https://localhost.local/${1}"
+        permanent: true
+
+    digest-auth-middleware:
+      digestAuth:
+        realm: "secured"
+        users:
+          - "admin:traefik:817374111f31cc282162486425ee5e9e"
+
+
+    whitelist-middleware:
+      ipWhiteList:
+        sourceRange:
+          # Internal
+          - 127.0.0.1/32
