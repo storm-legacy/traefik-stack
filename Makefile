@@ -10,7 +10,7 @@ PYTHON_CMD := python3
 
 default: init
 
-init: __init create_network gen_httpdigest start
+init: __init create_network gen_httpdigest
 
 __init:
 	$(PYTHON_CMD) ./scripts.py copy -f -n .env.example .env

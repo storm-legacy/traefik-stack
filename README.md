@@ -9,6 +9,7 @@ There are some defaults that will just work, but in case of further changes you 
   ```
   - "--certificatesresolvers.le.acme.caserver=https://acme-staging-v02.api.letsencrypt.org/directory"
   ```
+- For list of commands, check `Makefile`
 
 ### Requirements
 - Docker Engine
@@ -21,12 +22,19 @@ Clone repository:
 git clone https://github.com/storm-legacy/traefik-stack.git
 ```
 
+
 ### Quick (via Makefile)
 Initialize project via command below. You will be asked for username and password:
 ```bash
 make init
 ```
+
 Adjust settings in `.env`. Check comments for more informations
+
+Start:
+```bash
+make start
+```
 
 
 ### Manual
