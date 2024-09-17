@@ -26,6 +26,9 @@ http:
         users:
           - "admin:traefik:817374111f31cc282162486425ee5e9e"
 
+    buffer-middleware:
+      buffering:
+        maxRequestBodyBytes: 33554432 # 32MB
 
     whitelist-middleware:
       ipWhiteList:

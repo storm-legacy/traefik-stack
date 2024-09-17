@@ -1,73 +1,83 @@
-SHELL := /bin/bash
+-include .env.example
+-include .env
 
-PWD := $(shell pwd)
-DOCKER_COMPOSE_FILE := docker-compose.yml
+COMPOSE_FILE := compose.yml
+
+DOCKER_CMD := docker
+DOCKER_COMPOSE_CMD := $(DOCKER_CMD) compose
+
+default: init
+
+init: __init start
+
+__init:
+	cp -fn .env.example .env
 
 #*
 #* GENERAL OPERATIONS
 #*
 start:
-	docker compose -f $(DOCKER_COMPOSE_FILE) up -d
+	$(DOCKER_COMPOSE_CMD) up -d
 
 start_%:
-	docker compose -f $(DOCKER_COMPOSE_FILE) up -d $*
+	$(DOCKER_COMPOSE_CMD) up -d $*
 
 stop:
-	docker compose -f $(DOCKER_COMPOSE_FILE) down --remove-orphans
+	$(DOCKER_COMPOSE_CMD) down --remove-orphans
 
 stop_%:
-	docker compose -f $(DOCKER_COMPOSE_FILE) stop $*
-	docker compose -f $(DOCKER_COMPOSE_FILE) rm -f $*
+	$(DOCKER_COMPOSE_CMD) stop $*
+	$(DOCKER_COMPOSE_CMD) rm -f $*
 
 down: stop
 
 logs:
-	docker compose -f $(DOCKER_COMPOSE_FILE) logs --tail 100
+	$(DOCKER_COMPOSE_CMD) logs --tail 100
 
 logsf:
-	docker compose -f $(DOCKER_COMPOSE_FILE) logs --tail 100 -f
+	$(DOCKER_COMPOSE_CMD) logs --tail 100 -f
 
 logs_%:
-	docker compose -f $(DOCKER_COMPOSE_FILE) logs --tail 100 $*
+	$(DOCKER_COMPOSE_CMD) logs --tail 100 $*
 
 logsf_%:
-	docker compose -f $(DOCKER_COMPOSE_FILE) logs --tail 100 -f $*
+	$(DOCKER_COMPOSE_CMD) logs --tail 100 -f $*
 
 status:
-	docker compose -f $(DOCKER_COMPOSE_FILE) ps -a
+	$(DOCKER_COMPOSE_CMD) ps -a
 
 stats:
 	docker stats
 
 restart_%:
-	docker compose -f $(DOCKER_COMPOSE_FILE) stop $*
-	docker compose -f $(DOCKER_COMPOSE_FILE) rm -f $*
-	docker compose -f $(DOCKER_COMPOSE_FILE) up -d $*
+	$(DOCKER_COMPOSE_CMD) stop $*
+	$(DOCKER_COMPOSE_CMD) rm -f $*
+	$(DOCKER_COMPOSE_CMD) up -d $*
 
 restart: stop start
 
 build:
-	docker compose -f $(DOCKER_COMPOSE_FILE) build
+	$(DOCKER_COMPOSE_CMD) build
 
 buildnc:
-	docker compose -f $(DOCKER_COMPOSE_FILE) build --no-cache
+	$(DOCKER_COMPOSE_CMD) build --no-cache
 
 #*
 #* CONFIGURATION
 #*
 create_network:
-	docker network create traefik-proxy || true
+	$(DOCKER_CMD) network create $(TRAEFIK_PROXY_NETWORK_NAME) || true
 
 delete_network:
-	docker network rm traefik-proxy
+	$(DOCKER_CMD) docker network rm $(TRAEFIK_PROXY_NETWORK_NAME)
 
 #*
 #* HOUSEKEEPING
 #*
 clean_older_images:
-	docker image prune -a -f --filter "until=$(shell date -d '14 days ago' +%s)"
-	
+	$(DOCKER_CMD) image prune -a -f --filter "until=$(shell date -d '14 days ago' +%s)"
+
 clean:
-	docker compose -f $(DOCKER_COMPOSE_FILE) down -v --remove-orphans
+	$(DOCKER_COMPOSE_CMD) down -v --remove-orphans
 
 default: restart
