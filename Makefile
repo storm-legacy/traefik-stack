@@ -1,17 +1,22 @@
 -include .env.example
 -include .env
 
-COMPOSE_FILE := compose.yml
-
 DOCKER_CMD := docker
-DOCKER_COMPOSE_CMD := $(DOCKER_CMD) compose
+DOCKER_COMPOSE_FILE := compose.yml
+DOCKER_COMPOSE_CMD := $(DOCKER_CMD) compose -f $(DOCKER_COMPOSE_FILE)
+
+PYTHON_CMD := python3
+
 
 default: init
 
-init: __init start
+init: __init create_network gen_httpdigest start
 
 __init:
-	cp -fn .env.example .env
+	$(PYTHON_CMD) ./scripts.py copy -f -n .env.example .env
+
+gen_httpdigest:
+	$(PYTHON_CMD) ./scripts.py gen --save
 
 #*
 #* GENERAL OPERATIONS
@@ -69,7 +74,7 @@ create_network:
 	$(DOCKER_CMD) network create $(TRAEFIK_PROXY_NETWORK_NAME) || true
 
 delete_network:
-	$(DOCKER_CMD) docker network rm $(TRAEFIK_PROXY_NETWORK_NAME)
+	$(DOCKER_CMD) network rm $(TRAEFIK_PROXY_NETWORK_NAME)
 
 #*
 #* HOUSEKEEPING
@@ -77,7 +82,7 @@ delete_network:
 clean_older_images:
 	$(DOCKER_CMD) image prune -a -f --filter "until=$(shell date -d '14 days ago' +%s)"
 
-clean:
-	$(DOCKER_COMPOSE_CMD) down -v --remove-orphans
+clean: __clean_compose delete_network
 
-default: restart
+__clean_compose:
+	$(DOCKER_COMPOSE_CMD) down -v --remove-orphans

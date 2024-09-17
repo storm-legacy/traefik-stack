@@ -22,10 +22,12 @@ git clone https://github.com/storm-legacy/traefik-stack.git
 ```
 
 ### Quick (via Makefile)
-Initialize project via command below. You will be asked for username and password, but that should be it.
+Initialize project via command below. You will be asked for username and password:
 ```bash
 make init
 ```
+Adjust settings in `.env`. Check comments for more informations
+
 
 ### Manual
 Copy `.env.example` configuration file to `.env` (**-f**orce, **--n**o-clobber - skip existing, don't ask questions)
@@ -35,7 +37,7 @@ cp -fn .env.example .env
 
 Generate credentials for DigestAuth plugin, there is neat python script that can make that quickly.
 ```bash
-python3 ./script.py gen:digest --save [USERNAME] [PASSWORD]
+python3 ./script.py gen [USERNAME] [PASSWORD] --save
 ```
 
 Or Alternatively with some Docker magic (run line by line):
