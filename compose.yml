@@ -8,7 +8,7 @@ volumes:
 
 services:
   traefik:
-    image: traefik:v2.11
+    image: traefik:v3.1
     hostname: "traefik"
     container_name: "traefik"
     restart: always
@@ -20,16 +20,23 @@ services:
         mode: host
       - target: 443
         published: 443
+        protocol: tcp
+        mode: host
+      - target: 443
+        published: 443
+        protocol: udp
         mode: host
     command:
       - "--global.checknewversion=false"
       - "--global.sendAnonymousUsage=false"
+      - "--providers.swarm=false"
       - "--providers.docker=true"
       - "--providers.docker.exposedbydefault=false"
       - "--providers.docker.network=${TRAEFIK_PROXY_NETWORK_NAME:-traefik-proxy}"
       - "--providers.file.directory=/etc/traefik/dynamic_conf"
       - "--entrypoints.web.address=:80"
       - "--entrypoints.websecure.address=:443"
+      - "--entrypoints.websecure.http3"
       - "--entrypoints.web.http.redirections.entrypoint.to=websecure"
       - "--entrypoints.web.http.redirections.entrypoint.scheme=https"
       - "--certificatesresolvers.le.acme.email=${TRAEFIK_LE_MAIL:-myemail@example.com}"
