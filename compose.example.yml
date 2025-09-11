@@ -1,0 +1,92 @@
+networks:
+  inet:
+
+volumes:
+  pgadmin_data:
+  postgres_data:
+  mysql_data:
+
+services:
+  frontend-1: &_frontend
+    image: nginxinc/nginx-unprivileged:1.28-alpine
+    # container_name: frontend
+    hostname: nginx
+    restart: unless-stopped
+    networks:
+      - traefik-proxy
+
+  frontend-2:
+    <<: *_frontend
+
+  backend:
+    image: ealen/echo-server:0.9.2
+    # container_name: backend
+    hostname: echoserver
+    restart: unless-stopped
+    networks:
+      - traefik-proxy
+      - inet
+    environment:
+      PORT: "8200"
+
+  pgadmin:
+    image: dpage/pgadmin4:9
+    # container_name: pgadmin4
+    hostname: pgadmin4
+    restart: unless-stopped
+    networks:
+      - traefik-proxy
+      - inet
+    environment:
+      PGADMIN_DISABLE_POSTFIX: "1"
+      PGADMIN_LISTEN_PORT: "9000"
+      PGADMIN_DEFAULT_EMAIL: "pgadmin@example.com"
+      PGADMIN_DEFAULT_PASSWORD: "password"
+      SCRIPT_NAME: "/pgadmin"
+    volumes:
+      - "pgadmin_data:/var/lib/pgadmin:rw"
+
+  phpmyadmin:
+    image: phpmyadmin:5-apache
+    # container_name: phpmyadmin
+    restart: unless-stopped
+    networks:
+      - traefik-proxy
+      - inet
+    environment:
+      PMA_HOST: "mysql"
+      PMA_USER: "root"
+      PMA_PASSWORD: "root"
+      PMA_ABSOLUTE_URI: "https://${TRAEFIK_MAIN_DOMAIN:-localhost}/pma"
+
+  mysql:
+    image: mariadb:11.4-noble
+    # container_name: mysql
+    hostname: mariadb
+    restart: unless-stopped
+    networks:
+      - inet
+    environment:
+      MYSQL_ROOT_PASSWORD: "root"
+    volumes:
+      - "mysql_data:/var/lib/mysql:rw"
+
+  postgres:
+    image: postgres:17-alpine
+    # container_name: postgres
+    hostname: postgresql
+    restart: unless-stopped
+    networks:
+      - inet
+    environment:
+      POSTGRES_PASSWORD: "postgres"
+    volumes:
+      - "postgres_data:/var/lib/postgresql/data:rw"
+
+  dummy:
+    image: nginxinc/nginx-unprivileged:1.28-alpine
+    # container_name: dummy
+    hostname: dummy-service
+    restart: unless-stopped
+    networks:
+      - traefik-proxy

@@ -1,0 +1,44 @@
+http:
+  routers:
+    frontend-router:
+      rule: 'Host(`{{ env "TRAEFIK_MAIN_DOMAIN" | default "localhost" }}`)'
+      service: frontend-service
+      entryPoints: ["websecure"]
+      tls:
+        certResolver: le
+      priority: 50
+      middlewares:
+        - general-chain-middleware
+
+    backend-router:
+      rule: 'Host(`{{ env "TRAEFIK_MAIN_DOMAIN" | default "localhost" }}`) && PathPrefix(`/api`)'
+      service: backend-service
+      entryPoints: ["websecure"]
+      tls:
+        certResolver: le
+      priority: 80
+      middlewares:
+        - general-chain-middleware
+
+  middlewares:
+    backend-prefixstrip-middleware:
+      stripPrefix:
+        prefixes:
+          - "/api/"
+          - "/api"
+
+  services:
+    frontend-service:
+      loadBalancer:
+        servers:
+          - url: "http://frontend-1:8080"
+          - url: "http://frontend-2:8080"
+        healthcheck:
+          path: "/"
+          interval: "10s"
+          timeout: "3s"
+
+    backend-service:
+      loadBalancer:
+        servers:
+          - url: "http://backend:8200"

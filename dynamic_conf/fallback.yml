@@ -1,0 +1,23 @@
+http:
+  routers:
+    catchall:
+      entryPoints: ["websecure"]
+      rule: "HostRegexp(`^.+$`)"
+      tls:
+        certResolver: le
+      priority: 1
+      service: dummy-service
+      middlewares:
+        - redirect-to-main-middleware
+
+  middlewares:
+    redirect-to-main-middleware:
+      redirectRegex:
+        regex: "^(.*)"
+        replacement: 'https://{{ env "TRAEFIK_MAIN_DOMAIN" | default "localhost" }}'
+
+  services:
+    dummy-service:
+      loadBalancer:
+        servers:
+          - url: "http://dummy:8080"

@@ -1,0 +1,18 @@
+http:
+  routers:
+    dashboard:
+      rule: 'Host(`{{ env "TRAEFIK_MAIN_DOMAIN" | default "localhost" }}`) && (PathPrefix(`/traefik/api`) || PathPrefix(`/traefik/dashboard`))'
+      entryPoints: ["websecure"]
+      service: api@internal
+      tls:
+        certResolver: le
+      priority: 80
+      middlewares:
+        - whitelist-middleware
+        - dashboard-auth
+
+  middlewares:
+    dashboard-auth:
+      digestAuth:
+        users:
+          - "admin:traefik:817374111f31cc282162486425ee5e9e" # admin:admin

@@ -1,0 +1,27 @@
+http:
+  routers:
+    pma-router:
+      rule: 'Host(`{{ env "TRAEFIK_MAIN_DOMAIN" | default "localhost" }}`) && PathPrefix(`/pma`)'
+      entryPoints: ["websecure"]
+      service: pma-service
+      tls:
+        certResolver: le
+      priority: 80
+      middlewares:
+        - whitelist-middleware
+        - pma-prefix-middleware
+        - general-chain-middleware
+
+  services:
+    pma-service:
+      loadBalancer:
+        servers:
+          - url: "http://phpmyadmin:80"
+        passHostHeader: true
+
+  middlewares:
+    pma-prefix-middleware:
+      stripPrefix:
+        prefixes:
+          - "/pma/"
+          - "/pma"

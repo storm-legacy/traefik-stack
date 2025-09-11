@@ -24,14 +24,48 @@ http:
       digestAuth:
         realm: "secured"
         users:
-          - "admin:traefik:817374111f31cc282162486425ee5e9e"
+          - "admin:traefik:817374111f31cc282162486425ee5e9e" # admin:admin
 
     buffer-middleware:
       buffering:
         maxRequestBodyBytes: 33554432 # 32MB
+
+    ratelimit-middleware:
+      rateLimit:
+        average: 100
+        burst: 200
+
+    compress-middleware:
+      compress:
+        encodings:
+          - br
+          - gzip
+          - zstd
+        minResponseBodyBytes: 65536
+        excludedContentTypes:
+          - text/event-stream
+          - image/*
+          - video/*
+          - audio/*
+          - font/*
+          - application/zip
+          - application/x-gzip
+          - application/gzip
+          - application/x-7z-compressed
+          - application/x-rar-compressed
+          - application/pdf
+          - application/octet-stream
+
+    general-chain-middleware:
+      chain:
+        middlewares:
+          - ratelimit-middleware
+          - buffer-middleware
+          - compress-middleware
 
     whitelist-middleware:
       IPAllowList:
         sourceRange:
           # Internal
           - 127.0.0.1/32
+          - '{{ env "TRAEFIK_PROXY_NETWORK_SUBNET" }}'

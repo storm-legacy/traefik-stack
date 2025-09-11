@@ -1,0 +1,19 @@
+http:
+  routers:
+    pgadmin-router:
+      rule: 'Host(`{{ env "TRAEFIK_MAIN_DOMAIN" }}`) && PathPrefix(`/pgadmin`)'
+      entryPoints: ["websecure"]
+      service: pgadmin-service
+      priority: 80
+      tls:
+        certResolver: le
+      middlewares:
+        - whitelist-middleware
+        - general-chain-middleware
+
+  services:
+    pgadmin-service:
+      loadBalancer:
+        servers:
+          - url: "http://pgadmin:9000"
+        passHostHeader: true

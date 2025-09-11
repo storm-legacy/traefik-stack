@@ -1,36 +1,36 @@
 -include .env.example
--include .env
 
 DOCKER_CMD := docker
-DOCKER_COMPOSE_FILE := compose.yml
-DOCKER_COMPOSE_CMD := $(DOCKER_CMD) compose -f $(DOCKER_COMPOSE_FILE)
+DOCKER_COMPOSE_CMD := $(DOCKER_CMD) compose -f compose.yml
 
-PYTHON_CMD := python3
+-include .env
+
+# use example compose file
+ifeq ($(FULL_EXAMPLE),true)
+	DOCKER_COMPOSE_CMD += -f compose.example.yml
+endif
 
 
 default: init
 
-init: __init create_network gen_httpdigest
+init: __init create_network
 
 __init:
-	$(PYTHON_CMD) ./scripts.py copy -f -n .env.example .env
-
-gen_httpdigest:
-	$(PYTHON_CMD) ./scripts.py gen --save
+	cp -fn .env.example .env
 
 #*
-#* GENERAL OPERATIONS
+#* DOCKER OPTIONS
 #*
-start:
+start up:
 	$(DOCKER_COMPOSE_CMD) up -d
 
-start_%:
+start_% up_%:
 	$(DOCKER_COMPOSE_CMD) up -d $*
 
-stop:
+stop down:
 	$(DOCKER_COMPOSE_CMD) down --remove-orphans
 
-stop_%:
+stop_% down_%:
 	$(DOCKER_COMPOSE_CMD) stop $*
 	$(DOCKER_COMPOSE_CMD) rm -f $*
 
@@ -71,16 +71,10 @@ buildnc:
 #* CONFIGURATION
 #*
 create_network:
-	$(DOCKER_CMD) network create $(TRAEFIK_PROXY_NETWORK_NAME) || true
+	$(DOCKER_CMD) network create --subnet $(TRAEFIK_PROXY_NETWORK_SUBNET) $(TRAEFIK_PROXY_NETWORK_NAME) || true
 
 delete_network:
 	$(DOCKER_CMD) network rm $(TRAEFIK_PROXY_NETWORK_NAME)
-
-#*
-#* HOUSEKEEPING
-#*
-clean_older_images:
-	$(DOCKER_CMD) image prune -a -f --filter "until=$(shell date -d '14 days ago' +%s)"
 
 clean: __clean_compose delete_network
 
