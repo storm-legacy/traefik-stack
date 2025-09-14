@@ -1,73 +1,125 @@
-# Traefik Stack Project
-This is a quick-start project with a base configuration that allows for fast deployment on the target server when needed. It is meant to be cloned, initialized, tweaked to the need, and started. It does on purpose skip configuration of additional networks, services, and OS-level things like firewalls, server configuration, etc.
+The Traefik stack is a quick-start project that can be promptly deployed to the target machine with [Docker](https://www.docker.com/) installed. It uses the fantastic reverse proxy called [Traefik](https://doc.traefik.io/traefik/) and provides the bare minimum with examples that give a head start on the tedious task of setting up the web app environment. The project shows some examples of how applications can be configured and demonstrates them working in practice.
 
-## Quickstart
-There are some defaults that will just work, but in case of further changes you might want to just remove directory `.git` and just configure settings to your liking.
+<br/>
 
-### Important
-- Remember to adjust your configuration for Let's Encrypt. Try to avoid being [rate limited](https://letsencrypt.org/docs/rate-limits/). If you're not sure that your configuration is correct, uncomment line. It will point to [staging environment](https://letsencrypt.org/docs/staging-environment/) for Let's Encrypt certificates generation:
-  ```
-  - "--certificatesresolvers.le.acme.caserver=https://acme-staging-v02.api.letsencrypt.org/directory"
-  ```
-- For list of commands, check `Makefile`
+# Dependencies
+- Docker
+- Docker Compose
+- make (optional)
+- git (optional)
 
-### Requirements
-- Docker Engine
-- Docker Compose Plugin
-- GNU Makefile *(optionaly)*
-- Python *(optionaly)*
+Docker installation steps for your operating system can be found in the [official documentation](https://docs.docker.com/engine/install/). `make` and `git` are, in most cases, provided by your distro’s package manager, or they need to be additionally installed on Windows. Example for Debian/Ubuntu:
 
-Clone repository:
+```bash
+sudo apt-get update \
+&& sudo apt-get install --no-install-recommends git make
+```
+Make sure Docker is working after the new installation. Your user must be in the docker group, and the Docker service must be running:
+```bash
+sudo systemctl status docker
+# [...] Active: active (running) since Thu 1970-01-01 00:00:00 CEST; 1h 01min ago [...]
+
+sudo docker --version
+# Docker version 28.3.3, build 980b856
+
+docker --version
+# Docker version 28.3.3, build 980b856
+
+docker ps
+# CONTAINER ID  IMAGE COMMAND CREATED STATUS  PORTS
+```
+# Quickstart
+It is highly encouraged to look into the `compose.yml`, `.env.example`, and `dynamic_conf/*` files to get familiar with the Traefik configuration and how traffic forwarding is set up.
+
+## Clone repository
 ```bash
 git clone https://github.com/storm-legacy/traefik-stack.git
 ```
 
-
-### Quick (via Makefile)
-Initialize project via command below. You will be asked for username and password:
+## Automatic (quick)
+If you have installed all dependencies and already cloned the repository, you can do everything at once with a single command. For more information, check the Makefile.
 ```bash
+make
+# or
 make init
 ```
 
-Adjust settings in `.env`. Check comments for more informations
+## Semi-manual (slower)
+If you want to have a little more control over the process, you can use the steps provided below. Example commands will use the default values provided in `.env.example`.
 
-Start:
+### Copy .env.example -> .env
+There are some defaults that are later used by the `Makefile` and `compose.yml`. These can be adjusted if needed.
 ```bash
-make start
-```
-
-
-### Manual
-Copy `.env.example` configuration file to `.env` (**-f**orce, **--n**o-clobber - skip existing, don't ask questions)
-```bash
+# make __init
 cp -fn .env.example .env
 ```
 
-Generate credentials for DigestAuth plugin, there is neat python script that can make that quickly.
+### Create proxy network
+This network is used for routing traffic to and from the Traefik container.
 ```bash
-python3 ./script.py gen [USERNAME] [PASSWORD] --save
+# make create_network
+docker network create --subnet 172.60.0.0/16 traefik-proxy
 ```
 
-Or Alternatively with some Docker magic (run line by line):
-```bash
-docker run -it --rm --name httpd httpd:2.4-alpine sh
-
-  htdigest -c digest_file traefik USERNAME
-  cat digest_file
-  exit
+### Adjust timezone
+```.env
+# .env
+TZ=Europe/Warsaw
 ```
 
-Modify `TRAEFIK_DIGESTAUTH_USERS` in `.env` to the generated value (it does not default to `admin:admin`, trust me bro). Adjust other settings if needed:
-```bash
-TRAEFIK_DIGESTAUTH_USERS=admin:traefik:817374111f31cc282162486425ee5e9e
+### Specify full example run
+If you want to run the entire example, make sure the `FULL_EXAMPLE` variable is set to `true`. In any other case, use a non-`true` value:
+```.env
+# .env
+FULL_EXAMPLE=true
 ```
 
-Create docker network for services to connect to (`traefik-proxy` can changed based on your `.env` configuration):
+### Remove unnecessary configuration files
+In the `dynamic_conf` directory, there are a few configuration files that can be safely removed if the example is not supposed to run. These can be removed with:
 ```bash
-docker network create traefik-proxy
+make remove_example
+```
+Although anything else in dynamic_conf can also be removed, at some point it is worth asking yourself whether you even need this project if you are going to remove the majority of it (better to start clean).
+
+### Start the project
+```bash
+# docker compose -f compose.yml -f compose.example.yml up -d # (ommit -f compose.example.yml on no-example variant)
+make start
 ```
 
-Start project:
-```bash
-docker compose up -d
+## Certificates
+The provided stack has basic automatic TLS certificate renewal, but for it to work properly, a few steps should be performed to ensure it functions correctly. Before anything else, make sure the domain is pointing to the correct IP address of the server and that Traefik is accessible from the Internet.
+
+### Configure staging certificates
+Open `compose.yml` and uncomment the line below the `command:` block:
+```yml
+- "--certificatesresolvers.le.acme.caserver=https://acme-staging-v02.api.letsencrypt.org/directory"
+
 ```
+This allows for certificate testing without the risk of being rate-limited in case of many failed iterations. It can be latter reversed for the production certificates usage.
+
+### Provide correct email and enable TLS_CHALLENGE in `.env`;
+```.env
+# .env
+TRAEFIK_LE_TLS_CHALLENGE=true
+TRAEFIK_LE_MAIL=my.email@correctdomain.com
+```
+
+### Restart the project
+```bash
+# docker compose -f compose.yml down
+# docker compose -f compose.yml up -d
+make restart
+```
+
+# Examples
+Various services are configured with different levels of priority, which enables the use of administration applications in subpaths and the main application on the root domain.
+
+Here is a list of all example configured services:
+
+| Service            | URL                       | User:Password                  | Traefik Config File                  |
+| ------------------ | ------------------------- | ------------------------------ | ------------------------------------ |
+| MySQL + phpMyAdmin | `https://localhost/pma/`  | `[none]`                       | `dynamic_conf/phpmyadmin.example.yml` |
+| PostgreSQL + pgAdmin | `https://localhost/pgadmin/` | `pgadmin@example.com:password` | `dynamic_conf/pgadmin.example.yml`   |
+| Frontend           | `https://localhost/`      | `[none]`                       | `dynamic_conf/app.example.yml`       |
+| Backend            | `https://localhost/api/`  | `[none]`                       | `dynamic_conf/app.example.yml`       |

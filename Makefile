@@ -13,7 +13,7 @@ endif
 
 default: init
 
-init: __init create_network
+init: __init create_network start
 
 __init:
 	cp -fn .env.example .env
@@ -75,6 +75,12 @@ create_network:
 
 delete_network:
 	$(DOCKER_CMD) network rm $(TRAEFIK_PROXY_NETWORK_NAME)
+
+remove_example:
+	rm -f dynamic_conf/*.example.yml
+
+__arm_project:
+	rm -f .git
 
 clean: __clean_compose delete_network
 

@@ -1,7 +1,7 @@
 http:
   routers:
     pma-router:
-      rule: 'Host(`{{ env "TRAEFIK_MAIN_DOMAIN" | default "localhost" }}`) && PathPrefix(`/pma`)'
+      rule: 'Host(`{{ env "TRAEFIK_MAIN_DOMAIN" | default "localhost" }}`) && PathPrefix(`/pma/`)'
       entryPoints: ["websecure"]
       service: pma-service
       tls:
@@ -17,6 +17,10 @@ http:
       loadBalancer:
         servers:
           - url: "http://phpmyadmin:80"
+        healthcheck:
+          path: "/"
+          interval: "60s"
+          timeout: "5s"
         passHostHeader: true
 
   middlewares:

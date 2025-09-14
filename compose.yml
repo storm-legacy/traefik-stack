@@ -10,7 +10,7 @@ volumes:
 
 services:
   traefik:
-    image: traefik:v3.4
+    image: traefik:v3.5
     hostname: traefik
     # container_name: traefik
     restart: unless-stopped
